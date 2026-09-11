@@ -16,7 +16,11 @@ Run:
     python app.py
 """
 
-import spaces  # must be imported before torch/transformers on ZeroGPU Spaces
+try:
+    import spaces  # only available on HuggingFace ZeroGPU Spaces
+    HF_SPACES = True
+except ImportError:
+    HF_SPACES = False  # running locally — no GPU decorator needed
 
 import numpy as np
 import librosa
@@ -84,7 +88,6 @@ def _prepare_audio(audio):
     return data
 
 
-@spaces.GPU
 def analyze_voice(audio):
     """
     Takes Gradio audio input, returns (transcript_text, emotion_text).
@@ -153,11 +156,16 @@ with gr.Blocks(title="HealHub - Voice Emotion Detection") as demo:
         transcript_output = gr.Textbox(label="Transcript", lines=4)
         emotion_output = gr.Textbox(label="Emotion Analysis", lines=4)
 
-    submit_btn.click(
-        fn=analyze_voice,
-        inputs=audio_input,
-        outputs=[transcript_output, emotion_output],
-    )
+    # Fire on button click OR as soon as audio is ready (upload/record done)
+    # — the .change() handler fixes the "No audio received" issue on mobile
+    # where the button click can fire before Gradio registers the audio value.
+    for event in [submit_btn.click, audio_input.change]:
+        event(
+            fn=analyze_voice,
+            inputs=audio_input,
+            outputs=[transcript_output, emotion_output],
+            show_progress="minimal",
+        )
 
     gr.Markdown(
         """
