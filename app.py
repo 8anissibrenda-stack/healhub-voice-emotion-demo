@@ -88,6 +88,7 @@ def _prepare_audio(audio):
     return data
 
 
+@(spaces.GPU if HF_SPACES else lambda f: f)
 def analyze_voice(audio):
     """
     Takes Gradio audio input, returns (transcript_text, emotion_text).
