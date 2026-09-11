@@ -15,6 +15,7 @@ Run:
 Then open the local URL Gradio prints (usually http://127.0.0.1:7860)
 """
 
+import spaces
 import numpy as np
 import librosa
 import gradio as gr
@@ -65,6 +66,7 @@ CONCERN_LEVEL = {
 }
 
 
+@spaces.GPU
 def predict_emotion(audio):
     """
     audio: tuple (sample_rate, numpy_array) as provided by Gradio's
