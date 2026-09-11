@@ -35,16 +35,33 @@ print("Model loaded.")
 
 TARGET_SR = 16000  # this model expects 16kHz mono audio
 
-# A simple mapping so we can show a friendlier "distress-oriented" label
-# alongside the raw model output. Tune this for your own tiering logic.
-DISTRESS_WEIGHT = {
-    "angry": "High concern",
-    "fear": "High concern",
-    "sad": "Moderate concern",
-    "disgust": "Moderate concern",
-    "surprise": "Low concern",
-    "happy": "Low concern",
-    "neutral": "Baseline / Low concern",
+# Human-readable descriptions mapped to each emotion label.
+EMOTION_DESCRIPTION = {
+    "happy":   "You seem to be in a good, positive mood 😊",
+    "sad":     "You seem to be feeling low or down right now 😔",
+    "angry":   "You seem to be feeling frustrated or angry right now 😠",
+    "fear":    "You seem to be feeling anxious or scared right now 😟",
+    "disgust": "You seem to be feeling uneasy or uncomfortable right now 😖",
+    "surprise":"You seem to be feeling surprised or caught off guard 😮",
+    "neutral": "You seem calm and neutral right now 🙂",
+}
+
+# Optional supportive follow-up line keyed by concern level.
+SUPPORT_MESSAGE = {
+    "high":     "If these feelings persist, please consider reaching out to someone you trust or a support helpline.",
+    "moderate": "It might help to talk to someone about how you're feeling.",
+    "low":      "",
+}
+
+# Maps each emotion to its concern level for the supportive message.
+CONCERN_LEVEL = {
+    "angry":   "high",
+    "fear":    "high",
+    "sad":     "moderate",
+    "disgust": "moderate",
+    "surprise":"low",
+    "happy":   "low",
+    "neutral": "low",
 }
 
 
@@ -72,22 +89,26 @@ def predict_emotion(audio):
     if sr != TARGET_SR:
         data = librosa.resample(data, orig_sr=sr, target_sr=TARGET_SR)
 
-    # Run inference
-    results = classifier(data, sampling_rate=TARGET_SR, top_k=5)
+    # Run inference — only the top prediction is needed now
+    results = classifier(data, sampling_rate=TARGET_SR, top_k=1)
 
-    # Format results nicely
-    output_lines = ["Predicted emotions (ranked):\n"]
-    for r in results:
-        label = r["label"].lower()
-        score = r["score"] * 100
-        concern = DISTRESS_WEIGHT.get(label, "Unclassified")
-        output_lines.append(f"- {label.capitalize():<10} {score:5.1f}%   -> {concern}")
-
+    # Extract the top emotion label
     top_label = results[0]["label"].lower()
-    top_concern = DISTRESS_WEIGHT.get(top_label, "Unclassified")
-    output_lines.append(f"\nOverall signal: {top_label.upper()} ({top_concern})")
 
-    return "\n".join(output_lines)
+    # Build the friendly main sentence
+    main_sentence = EMOTION_DESCRIPTION.get(
+        top_label,
+        "We couldn't quite read the emotional tone. Please try again. 🎙️"
+    )
+
+    # Build the optional supportive follow-up line
+    concern = CONCERN_LEVEL.get(top_label, "low")
+    support_line = SUPPORT_MESSAGE.get(concern, "")
+
+    # Combine: main sentence, then (if any) the supportive line
+    if support_line:
+        return f"{main_sentence}\n\n{support_line}"
+    return main_sentence
 
 
 # ---------------------------------------------------------------------------
