@@ -26,13 +26,21 @@ from transformers import pipeline
 #    Hugging Face. This downloads automatically the first time you run it.
 # ---------------------------------------------------------------------------
 MODEL_NAME = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+WHISPER_MODEL = "openai/whisper-base"
 
-print("Loading model... (first run may take a minute to download)")
+print("Loading emotion model... (first run may take a minute to download)")
 classifier = pipeline(
     "audio-classification",
     model=MODEL_NAME,
 )
-print("Model loaded.")
+print("Emotion model loaded.")
+
+print("Loading Whisper transcription model...")
+transcriber = pipeline(
+    "automatic-speech-recognition",
+    model=WHISPER_MODEL,
+)
+print("Whisper model loaded.")
 
 TARGET_SR = 16000  # this model expects 16kHz mono audio
 
@@ -73,7 +81,10 @@ def predict_emotion(audio):
     microphone/upload audio component.
     """
     if audio is None:
-        return "No audio received. Please record or upload a voice note."
+        return (
+            "No audio received. Please record or upload a voice note.",
+            "No audio received. Please record or upload a voice note.",
+        )
 
     sr, data = audio
 
@@ -91,7 +102,16 @@ def predict_emotion(audio):
     if sr != TARGET_SR:
         data = librosa.resample(data, orig_sr=sr, target_sr=TARGET_SR)
 
-    # Run inference — only the top prediction is needed now
+    # --- Transcription (Whisper) ---
+    try:
+        asr_result = transcriber({"array": data, "sampling_rate": TARGET_SR})
+        transcript = asr_result.get("text", "").strip()
+        if not transcript:
+            transcript = "Could not transcribe audio."
+    except Exception:
+        transcript = "Could not transcribe audio."
+
+    # --- Emotion classification ---
     results = classifier(data, sampling_rate=TARGET_SR, top_k=1)
 
     # Extract the top emotion label
@@ -107,25 +127,35 @@ def predict_emotion(audio):
     concern = CONCERN_LEVEL.get(top_label, "low")
     support_line = SUPPORT_MESSAGE.get(concern, "")
 
-    # Combine: main sentence, then (if any) the supportive line
-    if support_line:
-        return f"{main_sentence}\n\n{support_line}"
-    return main_sentence
+    emotion_result = f"{main_sentence}\n\n{support_line}" if support_line else main_sentence
+
+    return transcript, emotion_result
 
 
 # ---------------------------------------------------------------------------
-# 2. Build a simple Gradio UI: record or upload -> get emotion prediction
+# 2. Build a simple Gradio UI: record or upload -> transcription + emotion
 # ---------------------------------------------------------------------------
+transcript_box = gr.Textbox(
+    label="Transcript",
+    lines=4,
+    placeholder="Your spoken words will appear here...",
+)
+emotion_box = gr.Textbox(
+    label="Emotion Analysis",
+    lines=4,
+    placeholder="Emotion result will appear here...",
+)
+
 demo = gr.Interface(
     fn=predict_emotion,
     inputs=gr.Audio(sources=["microphone", "upload"], type="numpy", label="Record or upload a voice note"),
-    outputs=gr.Textbox(label="Emotion Analysis Result", lines=10),
-    title="HealHub - Voice Emotion Detection (Demo)",
+    outputs=[transcript_box, emotion_box],
+    title="HealHub - Voice Emotion & Transcription Demo",
     description=(
         "Prototype for SIH26094: record your voice or upload a voice note "
-        "(e.g. exported from WhatsApp) to see the predicted emotional tone. "
-        "This demonstrates the acoustic-distress-signal component of the "
-        "HealHub pipeline (voice -> emotion -> distress tier)."
+        "(e.g. exported from WhatsApp) to see both the transcribed text and "
+        "the predicted emotional tone. Powered by OpenAI Whisper (transcription) "
+        "and wav2vec2 (emotion detection)."
     ),
 )
 
