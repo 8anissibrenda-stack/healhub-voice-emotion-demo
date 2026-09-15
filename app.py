@@ -131,51 +131,270 @@ def analyze_voice(audio):
 
 
 # ---------------------------------------------------------------------------
-# 2. Build the UI with gr.Blocks for a cleaner, more controllable layout
+# 2. Responsive Custom CSS
 # ---------------------------------------------------------------------------
-with gr.Blocks(title="HealHub - Voice Emotion Detection") as demo:
-    gr.Markdown(
-        """
-        # HealHub — Voice Emotion Detection (Demo)
-        Prototype for **SIH26094**. Record your voice or upload a voice note
-        (e.g. exported from WhatsApp) to see a transcript and a simple
-        reading of the emotional tone. This demonstrates the
-        **voice → emotion → distress signal** piece of the HealHub pipeline.
-        """
-    )
+custom_css = """
+/* Reset & Base bounds */
+body, .gradio-container {
+    background-color: #f8fafc !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
 
-    with gr.Row():
-        audio_input = gr.Audio(
-            sources=["microphone", "upload"],
-            type="numpy",
-            label="Record or upload a voice note",
-        )
+.gradio-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+}
 
-    submit_btn = gr.Button("Analyze", variant="primary")
+/* Centered Main Application Container */
+#main-container {
+    max-width: 1100px !important;
+    width: 92% !important;
+    margin: 2rem auto !important;
+    padding: 2.5rem 2rem !important;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid #e2e8f0 !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.75rem !important;
+}
 
-    with gr.Row():
-        transcript_output = gr.Textbox(label="Transcript", lines=4)
-        emotion_output = gr.Textbox(label="Emotion Analysis", lines=4)
+/* Header & Logo styling */
+.header-box {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 0.5rem !important;
+}
 
-    # Fire on button click OR as soon as audio is ready (upload/record done)
-    # — the .change() handler fixes the "No audio received" issue on mobile
-    # where the button click can fire before Gradio registers the audio value.
-    for event in [submit_btn.click, audio_input.change]:
-        event(
-            fn=analyze_voice,
-            inputs=audio_input,
-            outputs=[transcript_output, emotion_output],
-            show_progress="minimal",
-        )
+.logo-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
 
-    gr.Markdown(
-        """
-        ---
-        *Note: this is a proof-of-concept using general-purpose pretrained
-        models. For production use, models would be fine-tuned on
-        consented, regional-language distress speech data.*
-        """
-    )
+.logo-svg {
+    width: 120px !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 auto !important;
+    filter: drop-shadow(0 4px 12px rgba(251, 133, 0, 0.25));
+}
+
+.header-title {
+    color: #0f172a !important;
+    font-size: 1.85rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
+    text-align: center !important;
+}
+
+.header-subtitle {
+    color: #475569 !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+    max-width: 760px !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+}
+
+/* Audio Recording Input Component Fixes */
+.audio-card {
+    width: 100% !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    box-sizing: border-box !important;
+}
+
+div[data-testid="audio"] {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+div[data-testid="audio"] svg {
+    max-width: 100% !important;
+}
+
+/* Analyze Button Styling */
+.analyze-btn {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    padding: 0.85rem 2.5rem !important;
+    border-radius: 10px !important;
+    border: none !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3) !important;
+    transition: all 0.2s ease-in-out !important;
+    margin: 0.5rem auto !important;
+    display: inline-block !important;
+}
+
+.analyze-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* Results Row & Output Textboxes */
+.results-row {
+    display: flex !important;
+    gap: 1.5rem !important;
+    width: 100% !important;
+}
+
+.output-box textarea {
+    font-size: 0.975rem !important;
+    line-height: 1.5 !important;
+    color: #1e293b !important;
+    background-color: #f8fafc !important;
+    border-radius: 8px !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.output-box label span {
+    font-weight: 600 !important;
+    color: #334155 !important;
+    font-size: 0.95rem !important;
+}
+
+/* Footer Section */
+.footer-text {
+    text-align: center !important;
+    color: #64748b !important;
+    font-size: 0.875rem !important;
+    border-top: 1px solid #f1f5f9 !important;
+    padding-top: 1.25rem !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1023px) {
+    #main-container {
+        width: 95% !important;
+        margin: 1.5rem auto !important;
+        padding: 1.75rem 1.25rem !important;
+    }
+    .logo-svg {
+        width: 100px !important;
+    }
+    .header-title {
+        font-size: 1.6rem !important;
+    }
+}
+
+@media (max-width: 767px) {
+    #main-container {
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 1.25rem 0.85rem !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    .logo-svg {
+        width: 85px !important;
+    }
+    .header-title {
+        font-size: 1.4rem !important;
+    }
+    .results-row {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    .analyze-btn {
+        width: 100% !important;
+    }
+}
+"""
+
+# ---------------------------------------------------------------------------
+# 3. Build UI with gr.Blocks + responsive layout wrapper
+# ---------------------------------------------------------------------------
+with gr.Blocks(title="HealHub - Voice Emotion Detection", css=custom_css) as demo:
+    with gr.Column(elem_id="main-container"):
+        # Header with Logo & Description
+        with gr.Column(elem_classes=["header-box"]):
+            gr.HTML("""
+                <div class="logo-wrapper">
+                    <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 10 L85 45 L50 80 L15 45 Z" stroke="url(#orange-grad)" stroke-width="8" fill="none" stroke-linejoin="round" />
+                        <path d="M50 25 L75 50 L50 75 L25 50 Z" stroke="url(#orange-grad)" stroke-width="8" fill="none" stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="orange-grad" x1="0" y1="0" x2="100" y2="100">
+                                <stop offset="0%" stop-color="#FFB703" />
+                                <stop offset="100%" stop-color="#FB8500" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            """)
+            gr.Markdown(
+                """
+                <div class="header-title">HealHub — Voice Emotion Detection</div>
+                <div class="header-subtitle">
+                    Prototype for <strong>SIH26094</strong>. Record your voice or upload a voice note (e.g. exported from WhatsApp) to see a transcript and an emotional tone reading.
+                </div>
+                """
+            )
+
+        # Audio Input Section
+        with gr.Row(elem_classes=["audio-card"]):
+            audio_input = gr.Audio(
+                sources=["microphone", "upload"],
+                type="numpy",
+                label="Record or upload a voice note",
+            )
+
+        # Action Button
+        with gr.Row():
+            submit_btn = gr.Button("Analyze Voice Note", variant="primary", elem_classes=["analyze-btn"])
+
+        # Results Side-by-Side (Desktop/Tablet) or Column (Mobile)
+        with gr.Row(elem_classes=["results-row"]):
+            transcript_output = gr.Textbox(
+                label="Speech Transcript",
+                lines=4,
+                placeholder="Spoken words will appear here...",
+                interactive=False,
+                elem_classes=["output-box"]
+            )
+            emotion_output = gr.Textbox(
+                label="Emotional State Analysis",
+                lines=4,
+                placeholder="Emotion reading and guidance will appear here...",
+                interactive=False,
+                elem_classes=["output-box"]
+            )
+
+        # Event Binding
+        for event in [submit_btn.click, audio_input.change]:
+            event(
+                fn=analyze_voice,
+                inputs=audio_input,
+                outputs=[transcript_output, emotion_output],
+                show_progress="minimal",
+            )
+
+        # Footer / Disclaimer
+        with gr.Column(elem_classes=["footer-text"]):
+            gr.Markdown(
+                """
+                *Note: This is a proof-of-concept using pretrained speech models (`openai/whisper-base` and `wav2vec2-lg-xlsr-en`). For production use, models are fine-tuned on consented regional speech datasets.*
+                """
+            )
 
 if __name__ == "__main__":
     demo.launch()
