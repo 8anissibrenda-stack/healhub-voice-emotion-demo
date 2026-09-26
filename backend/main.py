@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.services.analyzer import analyze_voice_bytes
+from backend.services.text_emotion import analyze_text_emotion
 
 from contextlib import asynccontextmanager
 
@@ -83,16 +84,38 @@ def analyze_audio(file: UploadFile = File(...)):
     """
     if not file:
         raise HTTPException(status_code=400, detail="No audio file uploaded.")
-    
+
     try:
         contents = file.file.read()
         if len(contents) == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-        
+
         result = analyze_voice_bytes(contents)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+
+@app.post("/api/analyze-text")
+def analyze_text(payload: dict):
+    """Analyze typed text for emotional state using a text model and context-aware classification."""
+    text = (payload or {}).get("text", "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text input is empty.")
+
+    try:
+        score = analyze_text_emotion(text)
+        return {
+            "success": True,
+            "error": None,
+            "text": text,
+            "emotion_label": score["label"],
+            "emotion": score["label"],
+            "confidence": score["score"],
+            "all_scores": score.get("all_scores", []),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Text analysis failed: {str(exc)}")
 
 
 if __name__ == "__main__":
