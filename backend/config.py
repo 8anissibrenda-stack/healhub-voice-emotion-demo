@@ -11,7 +11,7 @@ class Settings:
 
     ASR_MODEL: str = os.getenv(
         "ASR_MODEL",
-        "distil-whisper/distil-large-v3"
+        "distil-whisper/distil-small.en"
     )
     EMOTION_MODEL: str = os.getenv(
         "EMOTION_MODEL",

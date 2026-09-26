@@ -3,6 +3,7 @@
 A lightweight, high-performance, responsive AI application prototype for **SIH26094 (HealHub)**.
 
 The application allows users to record live audio or upload voice notes (WAV, MP3, M4A, OGG, WEBM) and receive:
+
 1. **Speech Transcription** via OpenAI's Whisper model (`openai/whisper-base`).
 2. **Emotional State Analysis** via Speech Emotion Recognition (`ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition`).
 3. **Layman-Friendly Interpretations & Support Guidance** mapped to detected emotions.
@@ -31,19 +32,32 @@ FastAPI Application Backend (Python Uvicorn ASGI Server)
 ## 🚀 Local Quickstart
 
 ### 1. Prerequisites
+
 - Python 3.10 or higher
 - `pip`
 
 ### 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Run Application
+
+Easiest option on Windows:
+
+```powershell
+start_app.bat
+```
+
+Or from the terminal:
+
 ```bash
 python app.py
 ```
+
 Or directly using Uvicorn:
+
 ```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
@@ -54,14 +68,14 @@ Open your browser and navigate to: `http://localhost:8000`
 
 ## ⚙️ Environment Variables (Optional)
 
-| Variable | Description | Default |
-|---|---|---|
-| `HOST` | Server bind host address | `0.0.0.0` |
-| `PORT` | Server bind port | `8000` |
-| `HF_TOKEN` | Optional Hugging Face API token for remote inference | `None` |
-| `USE_HF_INFERENCE_API` | Set to `true` to use remote HF API instead of local model weights | `false` |
-| `EMOTION_MODEL` | Hugging Face model identifier for emotion detection | `ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition` |
-| `ASR_MODEL` | Hugging Face model identifier for speech transcription | `openai/whisper-base` |
+| Variable               | Description                                                       | Default                                                     |
+| ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------- |
+| `HOST`                 | Server bind host address                                          | `0.0.0.0`                                                   |
+| `PORT`                 | Server bind port                                                  | `8000`                                                      |
+| `HF_TOKEN`             | Optional Hugging Face API token for remote inference              | `None`                                                      |
+| `USE_HF_INFERENCE_API` | Set to `true` to use remote HF API instead of local model weights | `false`                                                     |
+| `EMOTION_MODEL`        | Hugging Face model identifier for emotion detection               | `ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition` |
+| `ASR_MODEL`            | Hugging Face model identifier for speech transcription            | `openai/whisper-base`                                       |
 
 ---
 
@@ -72,6 +86,7 @@ Open your browser and navigate to: `http://localhost:8000`
 - **`POST /api/analyze`**: Accepts multipart audio file upload (`file`), returns transcription and emotion analysis JSON.
 
 ### Sample API Response (`POST /api/analyze`)
+
 ```json
 {
   "success": true,
