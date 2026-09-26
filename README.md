@@ -44,14 +44,6 @@ pip install -r requirements.txt
 
 ### 3. Run Application
 
-Easiest option on Windows:
-
-```powershell
-start_app.bat
-```
-
-Or from the terminal:
-
 ```bash
 python app.py
 ```
