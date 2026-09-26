@@ -138,9 +138,7 @@ def _analyze_via_local_pipeline(processed_audio: np.ndarray):
                 {"array": processed_audio, "sampling_rate": TARGET_SR},
                 generate_kwargs={
                     "language": "english",
-                    "task": "transcribe",
-                    "condition_on_previous_text": False,
-                    "no_speech_threshold": 0.6
+                    "task": "transcribe"
                 }
             )
             raw_text = asr_result.get("text", "").strip()
