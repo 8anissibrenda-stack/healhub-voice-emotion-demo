@@ -212,7 +212,7 @@ function clearAudio() {
 
 // Analyze Voice Note API Call
 async function analyzeVoice() {
-    if (!currentAudioFile) {
+    if (!currentAudioFile && !currentAudioBlob) {
         alert('Please record or upload an audio file first.');
         return;
     }
@@ -222,10 +222,20 @@ async function analyzeVoice() {
     btnSpinner.classList.remove('hidden');
     analyzeBtn.querySelector('.btn-text').textContent = 'Analyzing Voice...';
 
-    const formData = new FormData();
-    formData.append('file', currentAudioFile);
-
     try {
+        // Convert any audio format (WebM, MP3, M4A, OGG) to 16kHz mono WAV in browser
+        let fileToSend = currentAudioFile;
+        try {
+            const blobToConvert = currentAudioBlob || currentAudioFile;
+            const wavBlob = await convertBlobToWav(blobToConvert);
+            fileToSend = new File([wavBlob], "voice_note.wav", { type: "audio/wav" });
+        } catch (convErr) {
+            console.warn("WAV normalization fallback:", convErr);
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileToSend);
+
         const response = await fetch('/api/analyze', {
             method: 'POST',
             body: formData
@@ -244,6 +254,64 @@ async function analyzeVoice() {
         btnSpinner.classList.add('hidden');
         analyzeBtn.querySelector('.btn-text').textContent = 'Analyze Voice Note';
     }
+}
+
+// Browser Web Audio API AudioBuffer -> 16kHz mono WAV Blob Converter
+async function convertBlobToWav(blob) {
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    
+    const targetSampleRate = 16000;
+    const offlineCtx = new OfflineAudioContext(
+        1,
+        Math.ceil(decodedBuffer.duration * targetSampleRate),
+        targetSampleRate
+    );
+    
+    const source = offlineCtx.createBufferSource();
+    source.buffer = decodedBuffer;
+    source.connect(offlineCtx.destination);
+    source.start(0);
+    
+    const renderedBuffer = await offlineCtx.startRendering();
+    const pcmData = renderedBuffer.getChannelData(0);
+    
+    const wavBuffer = encodeWAV(pcmData, targetSampleRate);
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
+function encodeWAV(samples, sampleRate) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    return buffer;
 }
 
 // Render Results on Screen
