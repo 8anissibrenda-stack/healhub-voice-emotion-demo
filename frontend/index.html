@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealHub — Voice Emotion Detection & Speech Transcription</title>
+    <meta name="description" content="AI-powered voice emotion analysis and speech transcription prototype for SIH26094 HealHub.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-background"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="brand">
+                <div class="logo-badge">
+                    <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 10 L85 45 L50 80 L15 45 Z" stroke="url(#orange-grad)" stroke-width="8" fill="none" stroke-linejoin="round" />
+                        <path d="M50 25 L75 50 L50 75 L25 50 Z" stroke="url(#orange-grad)" stroke-width="8" fill="none" stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="orange-grad" x1="0" y1="0" x2="100" y2="100">
+                                <stop offset="0%" stop-color="#FFB703" />
+                                <stop offset="100%" stop-color="#FB8500" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>HealHub <span class="badge">SIH26094</span></h1>
+                    <p class="subtitle">Voice Emotion Detection & Speech Transcription Demo</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Layout -->
+        <main class="workspace-grid">
+            <!-- Left Panel: Audio Input & Recording -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2>Voice Input</h2>
+                    <p>Record your voice note live or upload an existing audio file</p>
+                </div>
+
+                <!-- Input Tabs -->
+                <div class="tabs-nav">
+                    <button id="tabRecordBtn" class="tab-btn active" onclick="switchTab('record')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                        Record Live
+                    </button>
+                    <button id="tabUploadBtn" class="tab-btn" onclick="switchTab('upload')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload Audio
+                    </button>
+                </div>
+
+                <!-- Tab 1: Record Content -->
+                <div id="recordContent" class="tab-content active">
+                    <div class="recorder-box">
+                        <div class="visualizer-container" id="visualizerContainer">
+                            <div class="pulse-ring"></div>
+                            <div class="mic-icon-wrapper" id="micWrapper">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                            </div>
+                        </div>
+
+                        <div class="timer" id="recordTimer">00:00</div>
+                        <p class="recorder-status" id="recorderStatus">Tap Start to begin recording</p>
+
+                        <div class="recorder-controls">
+                            <button id="recordToggleBtn" class="btn btn-primary" onclick="toggleRecording()">
+                                Start Recording
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Upload Content -->
+                <div id="uploadContent" class="tab-content">
+                    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+                        </div>
+                        <p class="upload-title">Drop your audio file here or <span class="highlight">browse</span></p>
+                        <p class="upload-hint">Supports WAV, MP3, M4A, OGG, WEBM (Max 25MB)</p>
+                        <input type="file" id="fileInput" accept="audio/*" style="display:none" onchange="handleFileSelect(event)">
+                    </div>
+                </div>
+
+                <!-- Shared Audio Preview Container -->
+                <div id="audioPreviewWrapper" class="audio-preview-container hidden">
+                    <div class="preview-header">
+                        <span id="audioFileName">Recorded Voice Note</span>
+                        <button class="btn-icon" onclick="clearAudio()" title="Remove audio">&times;</button>
+                    </div>
+                    <audio id="audioPlayer" controls class="custom-audio-player"></audio>
+                </div>
+
+                <!-- Analyze Submit Button -->
+                <div class="action-footer">
+                    <button id="analyzeBtn" class="btn btn-action" onclick="analyzeVoice()" disabled>
+                        <span class="btn-text">Analyze Voice Note</span>
+                        <div class="spinner hidden" id="btnSpinner"></div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results & Emotion Analysis -->
+            <section class="card output-card">
+                <div class="card-header">
+                    <h2>Analysis Results</h2>
+                    <span id="executionTimeBadge" class="execution-time-badge hidden">Analyzed in 0.0s</span>
+                </div>
+
+                <div class="results-body">
+                    <!-- Placeholder State -->
+                    <div id="resultsPlaceholder" class="placeholder-box">
+                        <div class="placeholder-icon">
+                            <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </div>
+                        <p class="placeholder-title">No Audio Analyzed Yet</p>
+                        <p class="placeholder-text">Record or upload a voice note and press "Analyze Voice Note" to see real-time transcription and emotional state analysis.</p>
+                    </div>
+
+                    <!-- Active Results Container -->
+                    <div id="resultsContent" class="results-container hidden">
+                        <!-- Speech Transcript Card -->
+                        <div class="result-block">
+                            <div class="block-title-bar">
+                                <h3>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Speech Transcript
+                                </h3>
+                                <button class="btn-copy" onclick="copyTranscript()" title="Copy Transcript">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="transcript-box" id="transcriptOutput"></div>
+                        </div>
+
+                        <!-- Emotional State Reading Card -->
+                        <div class="result-block">
+                            <div class="block-title-bar">
+                                <h3>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a1.5 1.5 0 1 1 1.5-1.5A1.5 1.5 0 0 1 12 16zm1-5.5a1 1 0 0 1-2 0V7a1 1 0 0 1 2 0z"/></svg>
+                                    Emotional State Reading
+                                </h3>
+                                <div id="emotionBadge" class="emotion-badge neutral">Neutral</div>
+                            </div>
+                            <div class="emotion-box">
+                                <p id="emotionMessage" class="emotion-message-text"></p>
+                                <div id="supportAlert" class="support-alert hidden">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    <span id="supportMessageText"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>HealHub SIH Prototype &bull; Powered by <code>openai/whisper-base</code> and <code>wav2vec2-lg-xlsr-en</code></p>
+        </footer>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,14 +1,18 @@
-# Python bytecode
+# Python bytecode & cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
+.pytest_cache/
 
-# Environments
+# Virtual Environments
 venv/
 env/
 ENV/
+.venv/
+
+# Environment Variables
+.env
+.env.local
 
 # IDE & OS
 .vscode/
